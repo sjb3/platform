@@ -495,8 +495,13 @@ img {
 }
 /* line 230, ../sass/_buttons.sass */
 .btn-previous-story-nav:before {
+<<<<<<< 2b2fb1f9aa55beec685ef6af3b6b512a25a0e694
   font-size: 1.3em;
   content: "";
+=======
+  font-size: 3.3em;
+  content: "";
+>>>>>>> improve story arrows, update story content
 }
 /* line 233, ../sass/_buttons.sass */
 .btn-previous-story-nav:hover {
@@ -513,8 +518,13 @@ img {
 }
 /* line 242, ../sass/_buttons.sass */
 .btn-next-story-nav:before {
+<<<<<<< 2b2fb1f9aa55beec685ef6af3b6b512a25a0e694
   font-size: 1.3em;
   content: "";
+=======
+  font-size: 3.3em;
+  content: "";
+>>>>>>> improve story arrows, update story content
 }
 /* line 245, ../sass/_buttons.sass */
 .btn-next-story-nav:hover {
