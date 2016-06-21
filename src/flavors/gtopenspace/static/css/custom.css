@@ -8,11 +8,7 @@
 #site-title a:visited {
   display: block;
   float: left;
-<<<<<<< a366e458855f50ad184d81eaa780e0e1268cd327
   width: 450px;
-=======
-  width: 350px;
->>>>>>> initialize gtopenspace flavor
   height: 50px;
   overflow: hidden;
 }
