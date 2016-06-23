@@ -99,8 +99,8 @@ var Shareabouts = Shareabouts || {};
           animationDelay = 400;
 
       this.selectedCategory = $(evt.target).parent().prev().attr('id'),
-      this.selectedDatasetId = this.options.placeConfig.place_detail[this.selectedCategory].dataset,
-      this.selectedDatasetSlug = this.options.placeConfig.place_detail[this.selectedCategory].datasetSlug;
+      this.selectedDatasetId = this.options.placeConfig.categories[this.selectedCategory].dataset,
+      this.selectedDatasetSlug = this.options.placeConfig.categories[this.selectedCategory].datasetSlug;
 
       // re-render the form with the selected category
       this.render(this.selectedCategory, true);
@@ -155,7 +155,7 @@ var Shareabouts = Shareabouts || {};
       var targetButton = $(evt.target).attr("id"),
           oldValue = $(evt.target).val(),
           // find the match config data for this element
-          altData = _.filter(this.options.placeConfig.place_detail[this.selectedCategory].fields, function(item) {
+          altData = _.filter(this.options.placeConfig.categories[this.selectedCategory].fields, function(item) {
             return item.name == targetButton;
           })[0];
           // fetch alternate label and value

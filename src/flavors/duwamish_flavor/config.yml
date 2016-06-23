@@ -637,9 +637,8 @@ place:
 
 
   #### begin dynamic form config ####
-  place_detail:
+  categories:
     observation:
-      includeOnForm: false
       name: location_type
       dataset: duwamish
       datasetSlug: report
