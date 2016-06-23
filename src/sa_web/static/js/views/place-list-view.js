@@ -91,11 +91,9 @@ var Shareabouts = Shareabouts || {};
       $itemViewContainer.empty();
 
       this.collection.each(function(model) {
-        if (self.views[model.cid]) {
-          $itemViewContainer.append(self.views[model.cid].$el);
-          // Delegate the events so that the subviews still work
-          self.views[model.cid].supportView.delegateEvents();
-        }
+        $itemViewContainer.append(self.views[model.cid].$el);
+        // Delegate the events so that the subviews still work
+        self.views[model.cid].supportView.delegateEvents();
       });
     },
     handleSearchInput: function(evt) {
