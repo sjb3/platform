@@ -19,7 +19,6 @@ var Shareabouts = Shareabouts || {};
       this.priorDatasetId = null;
       this.selectedDatasetSlug = null;
       this.priorModelCid = null;
-      this.singleCategory = false;
       S.TemplateHelpers.overridePlaceTypeConfig(this.options.placeConfig.items,
         this.options.defaultPlaceTypeName);
       S.TemplateHelpers.insertInputTypeFlags(this.options.placeConfig.items);
@@ -29,16 +28,14 @@ var Shareabouts = Shareabouts || {};
         this.collection[collection].on('add', self.setModel, this);
       }
     },
-    render: function(category, is_category_selected) {
-      
+    render: function(category, is_category_selected) {      
       var selectedCategoryConfig = category && this.options.placeConfig.categories[category] || {};
       var data = _.extend({
         place_config: this.options.placeConfig,
         selected_category: selectedCategoryConfig,
         is_category_selected: is_category_selected || false,
         user_token: this.options.userToken,
-        current_user: S.currentUser,
-        is_single_category: (placesToIncludeOnForm.length == 1) ? true : false
+        current_user: S.currentUser
       }, S.stickyFieldValues);
 
       this.$el.html(Handlebars.templates['place-form'](data));
@@ -53,7 +50,14 @@ var Shareabouts = Shareabouts || {};
       if (this.singleCategory) $("#selected-category, #category-btns").addClass("is-visuallyhidden");
 
       // initialize datetime picker, if relevant
-      $('#datetimepicker').datetimepicker({ formatTime: 'g:i a' }); // <-- add to datetimepicker, or could be a handlebars helper?
+      $('#datetimepicker').datetimepicker({ formatTime: 'g:i a' });
+
+      // if there is only one place to include on form, hide category selection buttons
+      if (placesToIncludeOnForm.length == 1) {
+        $(".category-btn.clickable + label, #selected-category").css("display", "none");
+      }
+
+      return this;
     },
     remove: function() {
       this.unbind();
