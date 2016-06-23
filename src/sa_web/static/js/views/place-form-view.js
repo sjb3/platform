@@ -30,6 +30,7 @@ var Shareabouts = Shareabouts || {};
       }
     },
     render: function(category, is_category_selected) {
+      
       var selectedCategoryConfig = category && this.options.placeConfig.categories[category] || {};
       var data = _.extend({
         place_config: this.options.placeConfig,
