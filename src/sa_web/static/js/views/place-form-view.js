@@ -30,22 +30,7 @@ var Shareabouts = Shareabouts || {};
       }
     },
     render: function(category, is_category_selected) {
-      var self = this;
-      var selectedCategoryConfig = category && this.options.placeConfig.place_detail[category] || {};
-      var placesToIncludeOnForm = _.filter(_.keys(self.options.placeConfig.place_detail), function(key) { return self.options.placeConfig.place_detail[key].includeOnForm; });       
-
-      // if there is only one place to include on form, skip category selection page
-      if (placesToIncludeOnForm.length == 1) {
-        is_category_selected = true;
-        this.singleCategory = true;
-        category = placesToIncludeOnForm[0];
-        this.selectedCategory = category;
-        this.selectedDatasetId = this.options.placeConfig.place_detail[this.selectedCategory].dataset;
-        this.selectedDatasetSlug = this.options.placeConfig.place_detail[this.selectedCategory].datasetSlug;
-        selectedCategoryConfig = this.options.placeConfig.place_detail[category];
-        this.collection[this.selectedDatasetId].add({});
-      }
-
+      var selectedCategoryConfig = category && this.options.placeConfig.categories[category] || {};
       var data = _.extend({
         place_config: this.options.placeConfig,
         selected_category: selectedCategoryConfig,
@@ -56,6 +41,9 @@ var Shareabouts = Shareabouts || {};
       }, S.stickyFieldValues);
 
       this.$el.html(Handlebars.templates['place-form'](data));
+
+      // initialize datetime picker, if relevant
+      $('#datetimepicker').datetimepicker({ formatTime: 'g:i a' });
 
       return this;
     },
