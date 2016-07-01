@@ -546,8 +546,9 @@ place:
 
   #### begin dynamic form config ####
   #TODO: maybe add an autocomplete
-  categories:
+  place_detail:
     high:
+      includeOnForm: true
       name: location_type
       dataset: gtopenspace
       datasetSlug: idea
@@ -568,6 +569,7 @@ place:
           placeholder: _(Enter comment...)
           optional: true
     medium:
+      includeOnForm: true
       name: location_type
       dataset: gtopenspace
       datasetSlug: idea
@@ -588,6 +590,7 @@ place:
           placeholder: _(Enter comment...)
           optional: true
     low:
+      includeOnForm: true
       name: location_type
       dataset: gtopenspace
       datasetSlug: idea
@@ -630,6 +633,7 @@ place:
           optional: true
 
     feature:
+      includeOnForm: true      
       name: location_type
       dataset: gtopenspace
       datasetSlug: idea
