@@ -657,7 +657,7 @@ place:
         - name: comment
           type: textarea
           prompt: _(Comment:)
-          display_prompt: _(Comment:)
+          display_prompt:
           placeholder: _(Enter comment...)
           optional: true
 
