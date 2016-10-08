@@ -39,6 +39,10 @@
   <link href='https://fonts.googleapis.com/css?family=Alegreya+Sans' rel='stylesheet' type='text/css'>
 
   {% if settings.DEBUG %}
+  <link rel="stylesheet" href="{{ STATIC_URL }}css/leaflet-sidebar.css">
+  <link rel="stylesheet" href="{{ STATIC_URL }}css/leaflet.draw.css">
+  <link rel="stylesheet" href="{{ STATIC_URL }}css/default.css?deployed_at={{ settings.LAST_DEPLOY_DATE|urlencode:'' }}">
+
   <!-- jQuery date-time picker plugin -->
   <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery.datetimepicker.css">
   <!-- QuillJS -->
@@ -207,6 +211,7 @@
   <script src="{{STATIC_URL}}libs/esri-leaflet.js"></script>
   <script src="{{STATIC_URL}}libs/leaflet.sidebar.js"></script>
   <script src="{{STATIC_URL}}libs/quill.min.js"></script>
+  <script src="{{STATIC_URL}}libs/leaflet.draw.js"></script>
   {% else %}
   <!--   TODO: build libraries with npm instead of bower -->
   <script src="{{STATIC_URL}}dist/lib-bundle.js?ver=0.7.0"></script>
