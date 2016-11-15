@@ -18,10 +18,69 @@ var Shareabouts = Shareabouts || {};
       this.resetFormState();
       this.options.router.on("route", this.resetFormState, this);
       this.placeDetail = this.options.placeConfig.place_detail;
-
+      this.map = self.options.appView.mapView.map;
       S.TemplateHelpers.overridePlaceTypeConfig(this.options.placeConfig.items,
         this.options.defaultPlaceTypeName);
       S.TemplateHelpers.insertInputTypeFlags(this.options.placeConfig.items);
+
+      this.editingLayerGroup = new L.FeatureGroup();
+      this.map.addLayer(this.editingLayerGroup);
+      this.drawControlEditOnly = new L.Control.Draw({
+        position: "bottomright",
+        edit: {
+            featureGroup: self.editingLayerGroup
+        },
+        draw: false
+      });
+      this.drawControl = new L.Control.Draw({
+        position: "bottomright",
+        edit: false,
+        draw: {
+          circle: false,
+          marker: false
+        }
+      });
+      this.map.addControl(this.drawControl);
+
+      this.map.on("draw:deleted", function(e) {
+        if (self.editingLayerGroup.getLayers().length == 0) {
+          self.drawControlEditOnly.removeFrom(self.map);
+          self.drawControl.addTo(self.map);
+        }
+      });
+
+      this.map.on("draw:created", function(e) {
+        if (e.layer.type === "polygon" || e.layer.type === "rectangle") {
+          var coordinates = [],
+          latLngs = e.layer.getLatLngs();
+          for (var i = 0; i < latLngs.length; i++) {
+            coordinates.push([latLngs[i].lng, latLngs[i].lat]);
+          }
+          coordinates.push([latLngs[0].lng, latLngs[0].lat]);
+
+          self.formState.geometry = {
+            "type": "Polygon",
+            "coordinates": [coordinates]
+          }
+        }
+
+        if (e.layer.type === "polyline") {
+          var coordinates = [],
+          latLngs = e.layer.getLatLngs();
+          for (var i = 0; i < latLngs.length; i++) {
+            coordinates.push([latLngs[i].lng, latLngs[i].lat]);
+          }
+
+          self.formState.geometry = {
+            "type": "LineString",
+            "coordinates": coordinates
+          }
+        }
+
+        self.editingLayerGroup.addLayer(e.layer);
+        self.drawControl.removeFrom(self.map);
+        self.drawControlEditOnly.addTo(self.map);
+      });
     },
     resetFormState: function() {
       this.formState = {
@@ -61,66 +120,6 @@ var Shareabouts = Shareabouts || {};
       this.$el.html(Handlebars.templates['place-form'](data));
 
       if (this.center) $(".drag-marker-instructions").addClass("is-visuallyhidden");
-
-      var testLayer = new L.FeatureGroup();
-      var drawControl = new L.Control.Draw({
-        position: 'bottomright',
-        edit: {
-          featureGroup: testLayer
-        }
-      });
-      this.options.appView.mapView.map.addControl(drawControl);
-
-      this.options.appView.mapView.map.on('draw:created', function(e) {
-        console.log("draw:created");
-        console.log(e);
-
-        var type = e.layerType,
-            layer = e.layer;
-
-        layer.editing.enable();
-
-        if (type === 'marker') {
-            // Do marker specific actions
-        }
-
-        if (type === "polygon" || type === "rectangle") {
-          var coordinates = [],
-          latLngs = layer.getLatLngs();
-          for (var i = 0; i < latLngs.length; i++) {
-            coordinates.push([latLngs[i].lng, latLngs[i].lat]);
-          }
-          coordinates.push([latLngs[0].lng, latLngs[0].lat]);
-
-          self.formState.geometry = {
-            "type": "Polygon",
-            "coordinates": [coordinates]
-          }
-        }
-
-        if (type === "circle") {
-          // support circles?
-          console.log("circle");
-          //console.log(layer.getLatLngs());
-        }
-
-        if (type === "polyline") {
-          console.log("polyline");
-          var coordinates = [],
-          latLngs = layer.getLatLngs();
-          for (var i = 0; i < latLngs.length; i++) {
-            coordinates.push([latLngs[i].lng, latLngs[i].lat]);
-          }
-
-          self.formState.geometry = {
-            "type": "LineString",
-            "coordinates": coordinates
-          }
-        }
-
-
-        self.options.appView.mapView.map.addLayer(layer);
-    });
 
       return this;
     },
@@ -247,7 +246,6 @@ var Shareabouts = Shareabouts || {};
       // } 
       // 
       attrs.geometry = this.formState.geometry;
-      
 
       if (this.location && locationAttr) {
         attrs[locationAttr] = this.location;
@@ -405,6 +403,8 @@ var Shareabouts = Shareabouts || {};
       // Save and redirect
       model.save(attrs, {
         success: function() {
+          // remove the temporary editing layer
+          self.options.appView.mapView.map.removeLayer(self.editingLayer);
           S.Util.log('USER', 'new-place', 'successfully-add-place');
           router.navigate('/'+ model.get('datasetSlug') + '/' + model.id, {trigger: true});
         },
