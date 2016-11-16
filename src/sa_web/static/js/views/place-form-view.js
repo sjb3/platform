@@ -23,25 +23,6 @@ var Shareabouts = Shareabouts || {};
         this.options.defaultPlaceTypeName);
       S.TemplateHelpers.insertInputTypeFlags(this.options.placeConfig.items);
 
-      this.editingLayerGroup = new L.FeatureGroup();
-      this.map.addLayer(this.editingLayerGroup);
-      this.drawControlEditOnly = new L.Control.Draw({
-        position: "bottomright",
-        edit: {
-            featureGroup: self.editingLayerGroup
-        },
-        draw: false
-      });
-      this.drawControl = new L.Control.Draw({
-        position: "bottomright",
-        edit: false,
-        draw: {
-          circle: false,
-          marker: false
-        }
-      });
-      this.map.addControl(this.drawControl);
-
       this.map.on("draw:deleted", function(e) {
         if (self.editingLayerGroup.getLayers().length == 0) {
           self.drawControlEditOnly.removeFrom(self.map);
@@ -50,27 +31,27 @@ var Shareabouts = Shareabouts || {};
       });
 
       this.map.on("draw:created", function(e) {
-        if (e.layer.type === "polygon" || e.layer.type === "rectangle") {
+        var buildCoords = function(layer) {
           var coordinates = [],
-          latLngs = e.layer.getLatLngs();
+          latLngs = layer.getLatLngs();
           for (var i = 0; i < latLngs.length; i++) {
             coordinates.push([latLngs[i].lng, latLngs[i].lat]);
           }
-          coordinates.push([latLngs[0].lng, latLngs[0].lat]);
 
+          return coordinates;
+        };
+
+        if (e.layerType === "polygon" || e.layerType === "rectangle") {
+          var coordinates = buildCoords(e.layer),
+          latLngs = e.layer.getLatLngs();
+          // make sure the final polygon vertex exactly matches the first
+          coordinates.push([latLngs[0].lng, latLngs[0].lat]);
           self.formState.geometry = {
             "type": "Polygon",
             "coordinates": [coordinates]
           }
-        }
-
-        if (e.layer.type === "polyline") {
-          var coordinates = [],
-          latLngs = e.layer.getLatLngs();
-          for (var i = 0; i < latLngs.length; i++) {
-            coordinates.push([latLngs[i].lng, latLngs[i].lat]);
-          }
-
+        } else if (e.layerType === "polyline") {
+          var coordinates = buildCoords(e.layer);
           self.formState.geometry = {
             "type": "LineString",
             "coordinates": coordinates
@@ -93,7 +74,17 @@ var Shareabouts = Shareabouts || {};
         geometry: {}
       }
     },
-    render: function(isCategorySelected) {
+    resetDrawControl: function() {
+      if (this.editingLayerGroup) {
+        this.map.removeLayer(this.editingLayerGroup);
+      }        
+      if (this.drawControl && this.drawControl._map) {
+        this.map.removeControl(this.drawControl);
+      } else if (this.drawControlEditOnly && this.drawControlEditOnly._map) {
+        this.map.removeControl(this.drawControlEditOnly);
+      }
+    },
+    render: function(category, isCategorySelected) {
       var self = this,
       placesToIncludeOnForm = _.filter(this.placeDetail, function(place) { 
         return place.includeOnForm; 
@@ -118,6 +109,32 @@ var Shareabouts = Shareabouts || {};
       }, S.stickyFieldValues);
 
       this.$el.html(Handlebars.templates['place-form'](data));
+
+      if (selectedCategoryConfig.enable_geometry) {
+        this.options.appView.hideCenterPoint();
+        this.options.appView.removeSpotlightMask();
+        this.editingLayerGroup = new L.FeatureGroup();
+        this.map.addLayer(this.editingLayerGroup);
+        this.drawControlEditOnly = new L.Control.Draw({
+          position: "bottomright",
+          edit: {
+            featureGroup: self.editingLayerGroup
+          },
+          draw: false
+        });
+        this.drawControl = new L.Control.Draw({
+          position: "bottomright",
+          edit: false,
+          draw: {
+            circle: false,
+            marker: false
+          }
+        });
+        this.map.addControl(this.drawControl);
+      } else {
+        this.resetDrawControl();
+        this.options.appView.showNewPin();
+      }
 
       if (this.center) $(".drag-marker-instructions").addClass("is-visuallyhidden");
 
@@ -197,8 +214,7 @@ var Shareabouts = Shareabouts || {};
           attrs = {},
           locationAttr = this.options.placeConfig.location_item_name,
           $form = this.$('form');
-
-      attrs = S.Util.getAttrs($form); 
+      attrs = S.Util.getAttrs($form);
 
       // get values off of binary toggle buttons that have not been toggled
       $.each($("input[data-input-type='binary_toggle']:not(:checked)"), function() {
@@ -245,6 +261,15 @@ var Shareabouts = Shareabouts || {};
       //     [-67.13734351262877, 45.137451890638886]]]
       // } 
       // 
+      // If the map has no editingLayerGroup, assume we're adding
+      // point geometry
+      if (!this.map.hasLayer(this.editingLayerGroup)) {
+        this.formState.geometry = {
+          type: 'Point',
+          coordinates: [this.center.lng, this.center.lat]
+        }
+      }
+      
       attrs.geometry = this.formState.geometry;
 
       if (this.location && locationAttr) {
@@ -329,6 +354,7 @@ var Shareabouts = Shareabouts || {};
     closePanel: function() {
       this.center = null;
       this.resetFormState();
+      this.resetDrawControl();
     },
     onExpandCategories: function(evt) {
       var animationDelay = 400;
@@ -336,17 +362,22 @@ var Shareabouts = Shareabouts || {};
       $("#category-btns").animate( { height: "show" }, animationDelay ); 
     },
     onSubmit: Gatekeeper.onValidSubmit(function(evt) {
-      // Make sure that the center point has been set after the form was
-      // rendered. If not, this is a good indication that the user neglected
-      // to move the map to set it in the correct location.
-      if (!this.center) {
-        this.$('.drag-marker-instructions').addClass('is-visuallyhidden');
-        this.$('.drag-marker-warning').removeClass('is-visuallyhidden');
-
-        // Scroll to the top of the panel if desktop
-        this.$el.parent('article').scrollTop(0);
-        // Scroll to the top of the window, if mobile
+      var self = this,
+      rejectSubmit = function(warningClass) {
+        self.$(".drag-marker-instructions").addClass("is-visuallyhidden");
+        self.$(warningClass).removeClass("is-visuallyhidden");
+        self.$el.parent("article").scrollTop(0);
         window.scrollTo(0, 0);
+      };
+
+      if (this.map.hasLayer(this.editingLayerGroup) 
+        && this.editingLayerGroup.getLayers().length == 0) {
+        // If the map has an editingLayerGroup with no layers in it, it means the
+        // user hasn't created any geometry yet
+        rejectSubmit(".no-geometry-warning");
+        return;
+      } else if (!this.center) {
+        rejectSubmit(".drag-marker-warning");
         return;
       }
 
@@ -361,8 +392,8 @@ var Shareabouts = Shareabouts || {};
         richTextAttrs = {};
 
       // if we have a Quill-enabled field, assume content from this field belongs
-      // to the description field. We'll need to make this behavior more sophisticated
-      // to support multiple Quill-enabled fields.
+      // to the model's description attribute. We'll need to make this behavior 
+      // more sophisticated to support multiple Quill-enabled fields.
       if ($(".ql-editor").html()) {
         richTextAttrs.description = $(".ql-editor").html();
       }
@@ -377,8 +408,6 @@ var Shareabouts = Shareabouts || {};
         return self.formState.selectedCategoryConfig.dataset == layer.id;
       }).slug);
       model.set("datasetId", self.formState.selectedCategoryConfig.dataset);
-      
-      console.log("attrs.geometry", attrs.geometry);
 
       // if an attachment has been added...
       if (self.formState.attachmentData) {
@@ -403,23 +432,21 @@ var Shareabouts = Shareabouts || {};
       // Save and redirect
       model.save(attrs, {
         success: function() {
-          // remove the temporary editing layer
-          self.options.appView.mapView.map.removeLayer(self.editingLayer);
+          if (self.editingLayerGroup) {
+            // remove the temporary editing layer group if it exists
+            self.map.removeLayer(self.editingLayerGroup);
+          }
           S.Util.log('USER', 'new-place', 'successfully-add-place');
           router.navigate('/'+ model.get('datasetSlug') + '/' + model.id, {trigger: true});
         },
-        error: function(a, b, c) {
-          console.log(a);
-          console.log(b);
-          console.log(c);
-
-
+        error: function() {
           S.Util.log('USER', 'new-place', 'fail-to-add-place');
         },
         complete: function() {
           $button.removeAttr('disabled');
           spinner.stop();
           self.resetFormState();
+          self.resetDrawControl();
         },
         wait: true
       });
