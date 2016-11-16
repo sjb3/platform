@@ -383,7 +383,7 @@ var Shareabouts = Shareabouts || {};
     },
     onMapZoomEnd: function(evt) {
       if (this.hasBodyClass('content-visible') === true && !this.isProgrammaticZoom) {
-        $("#spotlight-place-mask").remove();
+        this.removeSpotlightMask();
       }
       this.isProgrammaticZoom = false;
     },
@@ -408,7 +408,7 @@ var Shareabouts = Shareabouts || {};
     },
     onMapDragEnd: function(evt) {
       if (this.hasBodyClass('content-visible') === true) {
-        $("#spotlight-place-mask").remove();
+        this.removeSpotlightMask();
       }
       this.setPlaceFormViewLatLng(this.mapView.map.getCenter());
     },
@@ -425,7 +425,7 @@ var Shareabouts = Shareabouts || {};
 
       S.Util.log('USER', 'panel', 'close-btn-click');
       // remove map mask if the user closes the side panel
-      $("#spotlight-place-mask").remove();
+      this.removeSpotlightMask();
       if (this.mapView.locationTypeFilter) {
         this.options.router.navigate('filter/' + this.mapView.locationTypeFilter, {trigger: true});
       } else {
@@ -676,7 +676,7 @@ var Shareabouts = Shareabouts || {};
         model.trigger('focus');
 
         if (model.get("story")) {
-          if (!model.get("story").spotlight) $("#spotlight-place-mask").remove();
+          if (!model.get("story").spotlight) self.removeSpotlightMask();
           self.isStoryActive = true;
           self.setStoryLayerVisibility(model);
         } else if (self.isStoryActive) {
@@ -856,7 +856,7 @@ var Shareabouts = Shareabouts || {};
         model.trigger('focus');
 
         if (model.get("story")) {
-          if (!model.get("story").spotlight) $("#spotlight-place-mask").remove();
+          if (!model.get("story").spotlight) self.removeSpotlightMask();
           self.isStoryActive = true;
           self.setStoryLayerVisibility(model);
         } else if (self.isStoryActive) {
@@ -943,7 +943,6 @@ var Shareabouts = Shareabouts || {};
     },
     showNewPin: function() {
       this.$centerpoint.show().addClass('newpin');
-
       this.addSpotlightMask();
     },
     showAddButton: function() {
@@ -969,26 +968,27 @@ var Shareabouts = Shareabouts || {};
       $("#add-place-btn-container").attr("class", "pos-top-right");
 
       S.Util.log('APP', 'panel-state', 'closed');
-      $("#spotlight-place-mask").remove();
+      this.removeSpotlightMask();
     },
     hideNewPin: function() {
       this.showCenterPoint();
     },
     addSpotlightMask: function() {
-      // remove an existing mask
-      $("#spotlight-place-mask").remove();
-
-      // add map mask and spotlight effect
+      this.removeSpotlightMask();
       var spotlightDiameter = 200,
           xOffset = $("#map").width() / 2 - (spotlightDiameter / 2),
           yOffset = $("#map").height() / 2 - (spotlightDiameter / 2);
       $("#map").append("<div id='spotlight-place-mask'><div id='spotlight-place-mask-fill'></div></div>");
       $("#spotlight-place-mask-fill").css("left", xOffset + "px")
-                               .css("top", yOffset + "px")
-                               .css("width", spotlightDiameter + "px")
-                               .css("height", spotlightDiameter + "px")
-                               // scale the box shadow to the largest screen dimension; an arbitrarily large box shadow won't get drawn in Safari
-                               .css("box-shadow", "0px 0px 0px " + Math.max((yOffset * 2), (xOffset * 2)) + "px rgba(0,0,0,0.4), inset 0px 0px 20px 30px rgba(0,0,0,0.4)");
+        .css("top", yOffset + "px")
+        .css("width", spotlightDiameter + "px")
+        .css("height", spotlightDiameter + "px")
+        // scale the box shadow to the largest screen dimension; 
+        // an arbitrarily large box shadow won't get drawn in Safari
+        .css("box-shadow", "0px 0px 0px " + Math.max((yOffset * 2), (xOffset * 2)) + "px rgba(0,0,0,0.4), inset 0px 0px 20px 30px rgba(0,0,0,0.4)");
+    },
+    removeSpotlightMask: function() {
+      $("#spotlight-place-mask").remove();
     },
     unfocusAllPlaces: function() {
       // Unfocus all of the place markers
