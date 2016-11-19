@@ -148,5 +148,37 @@ select {
     max-width: 60%;
     margin-bottom: 10px;
     font-size: 1.5em;
-    font-weight: bold;
+    font-weight:'bf1fb'}
+
+/* Geometry editor colorpicker */
+
+.sp-container {
+    position: absolute;
+    background-color: white;
+    left: -10px;
+    pointer-events: all;
+}
+
+.leaflet-control-colorpicker-interior {
+    font-family: FontAwesome;
+    width: 33px;
+    height: 33px;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    display: block;
+    border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
+    cursor: pointer;
+    text-align: center;
+    background-color: #FFFFFF;
+}
+
+.leaflet-control-colorpicker-interior:before {
+    content: '\f1fb';
+}
+
+.leaflet-control-colorpicker-interior:hover {
+    background-color: #f4f4f4;
 }
