@@ -419,9 +419,7 @@ var Shareabouts = Shareabouts || {};
     },
     onClickClosePanelBtn: function(evt) {
       evt.preventDefault();
-      if (this.placeFormView) {
-        this.placeFormView.closePanel();
-      }
+      Backbone.Events.trigger("panel:close");
 
       S.Util.log('USER', 'panel', 'close-btn-click');
       // remove map mask if the user closes the side panel
