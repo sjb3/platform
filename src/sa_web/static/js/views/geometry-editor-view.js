@@ -10,7 +10,9 @@ var Shareabouts = Shareabouts || {};
       this.options.router.on("route", this.resetDrawControl, this);
 
       this.map = this.options.map;
-      this.formState = this.options.formState;
+      this.geometry = null;
+      this.style = this.options.style || {};
+      this.geometryType = this.options.geometryType || null;
       this.editingLayerGroup = new L.FeatureGroup();
       this.DRAWING_DEFAULTS = {
         color: "#f06eaa",
@@ -66,7 +68,9 @@ var Shareabouts = Shareabouts || {};
             selectedPathOptions: {
               maintainColor: true,
             }
-          }
+          },
+          // don't show the delete icon in editor mode
+          remove: this.options.isCreatingNewGeometry
         },
         draw: false
       });
@@ -76,10 +80,10 @@ var Shareabouts = Shareabouts || {};
           position: "bottomright",
         },
         editMode: "fill",
-        color: this.DRAWING_DEFAULTS.color,
-        opacity: this.DRAWING_DEFAULTS.opacity,
-        fillColor: this.DRAWING_DEFAULTS.fillColor,
-        fillOpacity: this.DRAWING_DEFAULTS.fillOpacity,
+        color: this.style.color || this.DRAWING_DEFAULTS.color,
+        opacity: this.style.opacity || this.DRAWING_DEFAULTS.opacity,
+        fillColor: this.style.fillColor || this.DRAWING_DEFAULTS.fillColor,
+        fillOpacity: this.style.fillOpacity || this.DRAWING_DEFAULTS.fillOpacity,
         onAdd: function(map) {
           var controlDiv = L.DomUtil.create('div', 'leaflet-control-colorpicker');
           L.DomEvent
@@ -93,6 +97,7 @@ var Shareabouts = Shareabouts || {};
           return controlDiv;
         }
       });
+      $(".leaflet-control-colorpicker, .sp-picker-container").remove();
       this.colorpicker = new colorpickerControl;
       this.addControl(this.colorpicker);
 
@@ -104,6 +109,7 @@ var Shareabouts = Shareabouts || {};
         // convert to rgba() format
         color: tinycolor(self.colorpicker.fillColor).setAlpha(self.colorpicker.fillOpacity).toRgbString(),
         move: function(color) {
+          Backbone.Events.trigger("colorpicker:change");
           if (self.editingLayerGroup.getLayers().length > 0) {
             if (self.colorpicker.editMode === "fill") {
               self.editingLayerGroup.getLayers()[0].setStyle({
@@ -140,16 +146,8 @@ var Shareabouts = Shareabouts || {};
           tinycolor(self.colorpicker[self.DRAWING_DEFAULTS[$(this).attr("x-edit-mode")].color])
             .setAlpha(self.colorpicker[self.DRAWING_DEFAULTS[$(this).attr("x-edit-mode")].opacity]).toRgbString());
       });
-     
-      this.map.on("draw:deleted", function(e) {
-        if (self.editingLayerGroup.getLayers().length == 0) {
-          $(".leaflet-control-colorpicker").css("display", "none");
-          self.removeControl(self.drawControlEditOnly);
-          self.addControl(self.drawControl);
-        }
-      });
 
-      this.map.on("draw:created", function(e) {
+      var generateGeometry = function(layer) {
         var buildCoords = function(layer) {
           var coordinates = [],
           latLngs = layer.getLatLngs();
@@ -160,32 +158,66 @@ var Shareabouts = Shareabouts || {};
           return coordinates;
         };
 
-        if (e.layerType === "polygon" || e.layerType === "rectangle") {
-          var coordinates = buildCoords(e.layer),
-          latLngs = e.layer.getLatLngs();
+        if (self.geometryType === "polygon" 
+          || self.geometryType === "rectangle"
+          || self.geometryType === "Polygon") {
+          var coordinates = buildCoords(layer),
+          latLngs = layer.getLatLngs();
           // make sure the final polygon vertex exactly matches the first
           coordinates.push([latLngs[0].lng, latLngs[0].lat]);
-          self.formState.geometry = {
+          self.geometry = {
             "type": "Polygon",
             "coordinates": [coordinates]
           }
-        } else if (e.layerType === "polyline") {
-          var coordinates = buildCoords(e.layer);
-          self.formState.geometry = {
+        } else if (self.geometryType === "polyline"
+          || self.geometryType === "LineString") {
+          var coordinates = buildCoords(layer);
+          self.geometry = {
             "type": "LineString",
             "coordinates": coordinates
           }
         }
-        self.editingLayerGroup.addLayer(e.layer);
+
         self.removeControl(self.drawControl);
         self.addControl(self.drawControlEditOnly);
         $(".leaflet-control-colorpicker").css("display", "block");
+      }
+     
+      this.map.on("draw:deleted", function(e) {
+        if (self.editingLayerGroup.getLayers().length == 0) {
+          $(".leaflet-control-colorpicker").css("display", "none");
+          self.removeControl(self.drawControlEditOnly);
+          self.addControl(self.drawControl);
+        }
+      });
+
+      this.map.on("draw:created", function(e) {
+        self.geometryType = e.layerType;
+        generateGeometry(e.layer);
+        self.editingLayerGroup.addLayer(e.layer);
+      });
+
+      this.map.on("draw:edited", function(e) {
+        e.layers.eachLayer(function(layer) {
+          // really there's only one layer to iterate over
+          generateGeometry(layer);
+        });
       });
     },
 
     render: function() {
       this.addLayerToMap(this.editingLayerGroup);
-      this.addControl(this.drawControl);
+      // if we are rendering a GeometryEditorView via the place
+      // detail editor, add the place's existing layer to our
+      // editingLayerGroup
+      if (this.options.layerView) {
+        this.changeLayerGroup(this.options.layerView.layer,
+          this.options.layerView.layerGroup, this.editingLayerGroup)
+        this.addControl(this.drawControlEditOnly);
+        $(".leaflet-control-colorpicker").css("display", "block");
+      } else {
+        this.addControl(this.drawControl);
+      }
 
       return this;
     },
@@ -214,11 +246,22 @@ var Shareabouts = Shareabouts || {};
       }
     },
 
+    changeLayerGroup: function(layer, sourceLayerGroup, targetLayerGroup) {
+      sourceLayerGroup.removeLayer(layer);
+      targetLayerGroup.addLayer(layer);
+    },
+
     resetDrawControl: function() {
       var self = this;
       this.editingLayerGroup.getLayers().forEach(function(layer) {
         self.editingLayerGroup.removeLayer(layer);
       });
+
+      if (this.options.layerView) {
+        this.changeLayerGroup(this.options.layerView.layer, 
+          this.editingLayerGroup, this.options.layerView.layerGroup);
+      }
+
       this.removeLayerFromMap(this.editingLayerGroup);
       this.removeControl(this.drawControl);
       this.removeControl(this.drawControlEditOnly);

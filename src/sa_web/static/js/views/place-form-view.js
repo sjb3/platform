@@ -68,7 +68,7 @@ var Shareabouts = Shareabouts || {};
         if (!this.geometryEditorView) {
           this.geometryEditorView = new S.GeometryEditorView({
             map: this.map,
-            formState: this.formState,
+            isCreatingNewGeometry: true,
             router: this.options.router
           }).render();
         } else {
@@ -176,17 +176,17 @@ var Shareabouts = Shareabouts || {};
           S.Util.saveAutocompleteValue(key, value, 30);
         }
       });
-
-      // If the selected category does not have geometry editing enabled,
-      // assume we're adding point geometry
-      if (!this.formState.selectedCategoryConfig.enable_geometry) {
-        this.formState.geometry = {
+      
+      if (this.formState.selectedCategoryConfig.enable_geometry) {
+        attrs.geometry = this.geometryEditorView.geometry;
+      } else {
+        // If the selected category does not have geometry editing enabled,
+        // assume we're adding point geometry
+        attrs.geometry = {
           type: 'Point',
           coordinates: [this.center.lng, this.center.lat]
         }
       }
-      
-      attrs.geometry = this.formState.geometry;
 
       if (this.location && locationAttr) {
         attrs[locationAttr] = this.location;

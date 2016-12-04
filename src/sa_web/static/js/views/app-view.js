@@ -485,13 +485,15 @@ var Shareabouts = Shareabouts || {};
       }
       return landmarkDetailView;
     },
-    getPlaceDetailView: function(model) {
+    getPlaceDetailView: function(model, layerView) {
       var placeDetailView;
       if (this.placeDetailViews[model.cid]) {
         placeDetailView = this.placeDetailViews[model.cid];
       } else {
         placeDetailView = new S.PlaceDetailView({
           model: model,
+          appView: this,
+          layerView: layerView,
           surveyConfig: this.options.surveyConfig,
           supportConfig: this.options.supportConfig,
           placeConfig: this.options.placeConfig,
@@ -774,7 +776,7 @@ var Shareabouts = Shareabouts || {};
 
       onPlaceFound = function(model) {
         var map = self.mapView.map,
-            layer, center, $responseToScrollTo;
+            layer, layerView, center, $responseToScrollTo;
 
         // If this model is a duplicate of one that already exists in the
         // places collection, it may not correspond to a layerView. For this
@@ -787,9 +789,10 @@ var Shareabouts = Shareabouts || {};
         // 'self.mapView.layerViews[model.cid]` is undefined
         if (self.mapView.layerViews[datasetId] && self.mapView.layerViews[datasetId][model.cid]) {
           layer = self.mapView.layerViews[datasetId][model.cid].layer;
+          layerView = self.mapView.layerViews[datasetId][model.cid];
         }
 
-        self.activeDetailView = self.getPlaceDetailView(model);
+        self.activeDetailView = self.getPlaceDetailView(model, layerView);
         self.activeDetailView.isModified = false;
         self.activeDetailView.isEditingToggled = false;
 

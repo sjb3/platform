@@ -9,6 +9,8 @@ var Shareabouts = Shareabouts || {};
       this.map = this.options.map;
       this.isFocused = false;
 
+      this.layerGroup = this.options.layerGroup;
+
       // A throttled version of the render function
       this.throttledRender = _.throttle(this.render, 300);
 
@@ -102,7 +104,7 @@ var Shareabouts = Shareabouts || {};
     },
     removeLayer: function() {
       if (this.layer) {
-        this.options.layer.removeLayer(this.layer);
+        this.layerGroup.removeLayer(this.layer);
       }
     },
     render: function() {
@@ -159,7 +161,7 @@ var Shareabouts = Shareabouts || {};
       if (!this.options.mapView.locationTypeFilter ||
         this.options.mapView.locationTypeFilter.toUpperCase() === this.model.get('location_type').toUpperCase()) {
         if (this.layer) {
-          this.options.layer.addLayer(this.layer);
+          this.layerGroup.addLayer(this.layer);
         }
       } else {
         this.hide();

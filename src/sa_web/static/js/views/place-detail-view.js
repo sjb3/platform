@@ -99,6 +99,25 @@ var Shareabouts = Shareabouts || {};
       this.isEditingToggled = toggled;
       this.surveyView.options.isEditingToggled = toggled;
       this.render();
+
+      if (toggled && (this.model.get("geometry").type === "Polygon"
+        || this.model.get("geometry").type === "LineString")) {
+        this.options.appView.removeSpotlightMask();
+        if (!this.geometryEditorView) {
+          this.geometryEditorView = new S.GeometryEditorView({
+            map: this.options.mapView.map,
+            isCreatingNewGeometry: false,
+            geometryType: this.model.get("geometry").type,
+            style: this.model.get("style"),
+            layerView: this.options.layerView,
+            router: this.options.router
+          }).render();
+        } else {
+          this.geometryEditorView.render();
+        }
+      } else if (this.geometryEditorView) {
+        this.geometryEditorView.resetDrawControl();
+      }
     },
 
     render: function() {
@@ -186,6 +205,10 @@ var Shareabouts = Shareabouts || {};
             onEditorChange();
           }
         });
+
+        // detect geometry and colorpicker edits
+        this.options.mapView.map.on("draw:edited", onEditorChange);
+        Backbone.Events.on("colorpicker:change", onEditorChange, this);
       }
 
       return this;
@@ -292,8 +315,21 @@ var Shareabouts = Shareabouts || {};
         }
       });
 
+      if (this.geometryEditorView) {
+        attrs.geometry = this.geometryEditorView.geometry || this.model.get("geometry");
+        attrs.style = {
+          color: this.geometryEditorView.colorpicker.color,
+          opacity: this.geometryEditorView.colorpicker.opacity,
+          fillColor: this.geometryEditorView.colorpicker.fillColor,
+          fillOpacity: this.geometryEditorView.colorpicker.fillOpacity
+        }
+      }
+
       this.model.save(attrs, {
         success: function() {
+          if (self.geometryEditorView) {
+            self.geometryEditorView.resetDrawControl();
+          }
           self.isModified = false;
           self.isEditingToggled = false;
           self.render();

@@ -228,7 +228,7 @@ var Shareabouts = Shareabouts || {};
           model: model,
           router: this.options.router,
           map: this.map,
-          layer: this.layers[collectionId],
+          layerGroup: this.layers[collectionId],
           placeTypes: this.options.placeTypes,
           // to access the filter
           mapView: this
