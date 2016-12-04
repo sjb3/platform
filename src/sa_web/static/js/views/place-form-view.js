@@ -177,38 +177,9 @@ var Shareabouts = Shareabouts || {};
         }
       });
 
-      // Get the location attributes from the map
-      // attrs.geometry = {
-      //   type: 'Point',
-      //   coordinates: [this.center.lng, this.center.lat]
-      // };
-      // attrs.geometry = {
-      //   'type': 'Polygon',
-      //   'coordinates': [[[-67.13734351262877, 45.137451890638886],
-      //     [-66.96466, 44.8097],
-      //     [-68.03252, 44.3252],
-      //     [-69.06, 43.98],
-      //     [-70.11617, 43.68405],
-      //     [-70.64573401557249, 43.090083319667144],
-      //     [-70.75102474636725, 43.08003225358635],
-      //     [-70.79761105007827, 43.21973948828747],
-      //     [-70.98176001655037, 43.36789581966826],
-      //     [-70.94416541205806, 43.46633942318431],
-      //     [-71.08482, 45.3052400000002],
-      //     [-70.6600225491012, 45.46022288673396],
-      //     [-70.30495378282376, 45.914794623389355],
-      //     [-70.00014034695016, 46.69317088478567],
-      //     [-69.23708614772835, 47.44777598732787],
-      //     [-68.90478084987546, 47.184794623394396],
-      //     [-68.23430497910454, 47.35462921812177],
-      //     [-67.79035274928509, 47.066248887716995],
-      //     [-67.79141211614706, 45.702585354182816],
-      //     [-67.13734351262877, 45.137451890638886]]]
-      // } 
-      // 
-      // If the map has no editingLayerGroup, assume we're adding
-      // point geometry
-      if (!this.map.hasLayer(this.editingLayerGroup)) {
+      // If the selected category does not have geometry editing enabled,
+      // assume we're adding point geometry
+      if (!this.formState.selectedCategoryConfig.enable_geometry) {
         this.formState.geometry = {
           type: 'Point',
           coordinates: [this.center.lng, this.center.lat]
@@ -314,8 +285,8 @@ var Shareabouts = Shareabouts || {};
         window.scrollTo(0, 0);
       };
 
-      if (this.map.hasLayer(this.editingLayerGroup) 
-        && this.editingLayerGroup.getLayers().length == 0) {
+      if (this.formState.selectedCategoryConfig.enable_geometry
+        && this.geometryEditorView.editingLayerGroup.getLayers().length == 0) {
         // If the map has an editingLayerGroup with no layers in it, it means the
         // user hasn't created any geometry yet
         rejectSubmit(".no-geometry-warning");
@@ -343,12 +314,12 @@ var Shareabouts = Shareabouts || {};
       }
       attrs = _.extend(attrs, richTextAttrs);
 
-      if (this.map.hasLayer(this.editingLayerGroup)) {
+      if (this.formState.selectedCategoryConfig.enable_geometry) {
         attrs["style"] = {
-          color: this.colorpicker.color,
-          opacity: this.colorpicker.opacity,
-          fillColor: this.colorpicker.fillColor,
-          fillOpacity: this.colorpicker.fillOpacity
+          color: this.geometryEditorView.colorpicker.color,
+          opacity: this.geometryEditorView.colorpicker.opacity,
+          fillColor: this.geometryEditorView.colorpicker.fillColor,
+          fillOpacity: this.geometryEditorView.colorpicker.fillOpacity
         }
       }
 
@@ -399,7 +370,6 @@ var Shareabouts = Shareabouts || {};
           $button.removeAttr('disabled');
           spinner.stop();
           self.resetFormState();
-          self.resetDrawControl();
         },
         wait: true
       });
