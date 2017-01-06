@@ -57,7 +57,8 @@
   {% if config.map.cartodb_enabled %}
   <link rel="stylesheet" href="//cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/themes/css/cartodb.css" />
   {% else %}
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+  <!-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" /> -->
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/leaflet.css" />
   {% endif %}
 
   {% if config.cluster %}
@@ -172,7 +173,8 @@
   {% if config.map.cartodb_enabled %}
   <script src="//cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/3.15/cartodb.js"></script>
   {% else %}
-  <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>
+  <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script> -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/leaflet.js"></script>
   {% endif %}
   {% if config.cluster %}
   <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js"></script>
